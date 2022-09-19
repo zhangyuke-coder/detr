@@ -10,7 +10,7 @@ import os
 import torchvision
 from torchvision.ops.boxes import batched_nms
 import cv2
-
+from log import logger
 
 def get_args_parser():
     parser = argparse.ArgumentParser('Set transformer detector', add_help=False)
@@ -119,6 +119,7 @@ def rescale_bboxes(out_bbox, size):
 
 
 def filter_boxes(scores, boxes, confidence=0.7, apply_nms=True, iou=0.5):
+    logger.info('scores:{}, boxes:{}'.format(scores.shape, boxes.shape))
     keep = scores.max(-1).values > confidence
     scores, boxes = scores[keep], boxes[keep]
 
@@ -187,9 +188,14 @@ def main(args):
         image_tensor = image_tensor.to(device)
         time1 = time.time()
         inference_result = model(image_tensor)
+        logger.info('inference_result[pred_logits]:{}'.format(inference_result['pred_logits'].shape))
+        logger.info('inference_result[pred_boxes]:{}'.format(inference_result['pred_boxes'].shape))
         time2 = time.time()
         print("inference_time:", time2 - time1)
         probas = inference_result['pred_logits'].softmax(-1)[0, :, :-1].cpu()
+        logger.info('image_tensor.shape:{}'.format(image_tensor.shape))
+        logger.info('image_tensor.shape[3]:{}'.format(image_tensor.shape[3]))
+        logger.info('image_tensor.shape[2]:{}'.format(image_tensor.shape[2]))
         bboxes_scaled = rescale_bboxes(inference_result['pred_boxes'][0,].cpu(),
                                        (image_tensor.shape[3], image_tensor.shape[2]))
         scores, boxes = filter_boxes(probas, bboxes_scaled)

@@ -9,7 +9,7 @@ Copy-paste from torch.nn.Transformer with modifications:
 """
 import copy
 from typing import Optional, List
-
+from log import logger
 import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
@@ -45,17 +45,25 @@ class Transformer(nn.Module):
                 nn.init.xavier_uniform_(p)
 
     def forward(self, src, mask, query_embed, pos_embed):
+        logger.info('#########################transformer_forward###########################')
         # flatten NxCxHxW to HWxNxC
+        logger.info('src:{}, mask:{}, query_ambed:{}, pos_embed:{}'.format(src.shape, mask.shape, query_embed.shape, pos_embed.shape))
         bs, c, h, w = src.shape
         src = src.flatten(2).permute(2, 0, 1)
+        logger.info('src:{}'.format(src.shape))
         pos_embed = pos_embed.flatten(2).permute(2, 0, 1)
+        logger.info('pos_embed:{}'.format(pos_embed.shape))
         query_embed = query_embed.unsqueeze(1).repeat(1, bs, 1)
+        logger.info('query_embed:{}'.format(query_embed.shape))
         mask = mask.flatten(1)
-
+        logger.info('mask:{}'.format(mask.shape))
         tgt = torch.zeros_like(query_embed)
         memory = self.encoder(src, src_key_padding_mask=mask, pos=pos_embed)
+        logger.info("memory:{}".format(memory.shape))
         hs = self.decoder(tgt, memory, memory_key_padding_mask=mask,
                           pos=pos_embed, query_pos=query_embed)
+        logger.info('#########################transformer_forward###########################')
+
         return hs.transpose(1, 2), memory.permute(1, 2, 0).view(bs, c, h, w)
 
 
@@ -144,6 +152,7 @@ class TransformerEncoderLayer(nn.Module):
         self.normalize_before = normalize_before
 
     def with_pos_embed(self, tensor, pos: Optional[Tensor]):
+        logger.info('tensor:{}, pos:{}'.format(tensor.shape, pos.shape))
         return tensor if pos is None else tensor + pos
 
     def forward_post(self,
@@ -152,8 +161,14 @@ class TransformerEncoderLayer(nn.Module):
                      src_key_padding_mask: Optional[Tensor] = None,
                      pos: Optional[Tensor] = None):
         q = k = self.with_pos_embed(src, pos)
+        logger.info('q:{}, k:{}'.format(q.shape, k.shape))
+        logger.info('src:{}'.format(src.shape))
+        logger.info('src_mask:{}'.format(src_mask))
+        logger.info('src_key_padding_mask:{}'.format(src_key_padding_mask.shape))
+        # logger.info('q:{}, k:{}, src:{}, src_mask:{}, src_key_padding_mask:{}, pos:{}'.format(q.shape, k.shape, src.shape, src_mask.shape, src_key_padding_mask.shape, pos.shape))
         src2 = self.self_attn(q, k, value=src, attn_mask=src_mask,
                               key_padding_mask=src_key_padding_mask)[0]
+        logger.info('src2:{}'.format(src2.shape))
         src = src + self.dropout1(src2)
         src = self.norm1(src)
         src2 = self.linear2(self.dropout(self.activation(self.linear1(src))))
@@ -179,8 +194,10 @@ class TransformerEncoderLayer(nn.Module):
                 src_mask: Optional[Tensor] = None,
                 src_key_padding_mask: Optional[Tensor] = None,
                 pos: Optional[Tensor] = None):
+        logger.info('###########################transform_encode###############################')
         if self.normalize_before:
             return self.forward_pre(src, src_mask, src_key_padding_mask, pos)
+        logger.info('###########################transform_encode###############################')
         return self.forward_post(src, src_mask, src_key_padding_mask, pos)
 
 

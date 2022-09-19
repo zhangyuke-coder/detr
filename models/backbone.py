@@ -101,6 +101,7 @@ class Joiner(nn.Sequential):
         super().__init__(backbone, position_embedding)
 
     def forward(self, tensor_list: NestedTensor):
+        # logger.info('backbone_joiner:{}'.format(self[0]))
         xs = self[0](tensor_list)
         out: List[NestedTensor] = []
         pos = []

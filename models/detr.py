@@ -5,7 +5,7 @@ DETR model and criterion classes.
 import torch
 import torch.nn.functional as F
 from torch import nn
-
+from  log import logger
 from util import box_ops
 from util.misc import (NestedTensor, nested_tensor_from_tensor_list,
                        accuracy, get_world_size, interpolate,
@@ -56,19 +56,26 @@ class DETR(nn.Module):
                - "aux_outputs": Optional, only returned when auxilary losses are activated. It is a list of
                                 dictionnaries containing the two above keys for each decoder layer.
         """
+        logger.info('##############################detr_forward######################################')
         if isinstance(samples, (list, torch.Tensor)):
             samples = nested_tensor_from_tensor_list(samples)
         features, pos = self.backbone(samples)
-
+        # logger.info('features:{}'.format(features))
+        # logger.info('pos:{}'.format(len(pos)))
         src, mask = features[-1].decompose()
+        logger.info('src:{}, mask:{}'.format(src.shape, mask.shape))
         assert mask is not None
+        logger.info('self.input_proj(src):{}'.format(self.input_proj(src).shape))
+        logger.info('self.query_embed:{}'.format(self.query_embed))
         hs = self.transformer(self.input_proj(src), mask, self.query_embed.weight, pos[-1])[0]
-
+        logger.info('hs:{}'.format(hs.shape))
         outputs_class = self.class_embed(hs)
         outputs_coord = self.bbox_embed(hs).sigmoid()
         out = {'pred_logits': outputs_class[-1], 'pred_boxes': outputs_coord[-1]}
         if self.aux_loss:
             out['aux_outputs'] = self._set_aux_loss(outputs_class, outputs_coord)
+        logger.info('##############################detr_forward######################################')
+
         return out
 
     @torch.jit.unused
