@@ -66,7 +66,7 @@ class DETR(nn.Module):
         logger.info('src:{}, mask:{}'.format(src.shape, mask.shape))
         assert mask is not None
         logger.info('self.input_proj(src):{}'.format(self.input_proj(src).shape))
-        logger.info('self.query_embed:{}'.format(self.query_embed))
+        logger.info('self.query_embed:{}'.format(self.query_embed.weight))
         hs = self.transformer(self.input_proj(src), mask, self.query_embed.weight, pos[-1])[0]
         logger.info('hs:{}'.format(hs.shape))
         outputs_class = self.class_embed(hs)

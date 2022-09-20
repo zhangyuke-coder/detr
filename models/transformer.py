@@ -79,6 +79,8 @@ class TransformerEncoder(nn.Module):
                 mask: Optional[Tensor] = None,
                 src_key_padding_mask: Optional[Tensor] = None,
                 pos: Optional[Tensor] = None):
+        logger.info('#######################TransformerEncoder_forward###################################')
+        logger.info('src:{}, mask:{}, src_key_padding_mask:{}, pos:{}'.format(src.shape, mask, src_key_padding_mask.shape, pos.shape))
         output = src
 
         for layer in self.layers:
@@ -87,6 +89,7 @@ class TransformerEncoder(nn.Module):
 
         if self.norm is not None:
             output = self.norm(output)
+        logger.info('#######################TransformerEncoder_forward###################################')
 
         return output
 

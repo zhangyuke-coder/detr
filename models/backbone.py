@@ -64,6 +64,7 @@ class BackboneBase(nn.Module):
                 parameter.requires_grad_(False)
         if return_interm_layers:
             return_layers = {"layer1": "0", "layer2": "1", "layer3": "2", "layer4": "3"}
+            logger.info('zzzzz')
         else:
             return_layers = {'layer4': "0"}
         self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
@@ -71,11 +72,16 @@ class BackboneBase(nn.Module):
 
     def forward(self, tensor_list: NestedTensor):
         xs = self.body(tensor_list.tensors)
+        # logger.info('BackboneBase_xs:{}'.format(xs))
         out: Dict[str, NestedTensor] = {}
+
         for name, x in xs.items():
+            logger.info('name:{}'.format(name))
             m = tensor_list.mask
             assert m is not None
+            logger.info('x.shape[-2:]:{}'.format(x.shape[-2:]))
             mask = F.interpolate(m[None].float(), size=x.shape[-2:]).to(torch.bool)[0]
+            logger.info("mask_shape:{}".format(mask.shape))
             out[name] = NestedTensor(x, mask)
         return out
 
@@ -103,13 +109,14 @@ class Joiner(nn.Sequential):
     def forward(self, tensor_list: NestedTensor):
         # logger.info('backbone_joiner:{}'.format(self[0]))
         xs = self[0](tensor_list)
+        # logger.info('xs:{}'.format(xs))
         out: List[NestedTensor] = []
         pos = []
         for name, x in xs.items():
             out.append(x)
             # position encoding
             pos.append(self[1](x).to(x.tensors.dtype))
-
+        # logger.info('out_len:{}, pos_len:{}'.format(out[0].shape, pos[0].shape))
         return out, pos
 
 

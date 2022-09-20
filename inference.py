@@ -186,6 +186,7 @@ def main(args):
         image_tensor = torch.reshape(image_tensor,
                                      [-1, image_tensor.shape[0], image_tensor.shape[1], image_tensor.shape[2]])
         image_tensor = image_tensor.to(device)
+        logger.info('image_tensor:{}'.format(image_tensor.shape))
         time1 = time.time()
         inference_result = model(image_tensor)
         logger.info('inference_result[pred_logits]:{}'.format(inference_result['pred_logits'].shape))
